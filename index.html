@@ -107,7 +107,13 @@ dialog.drawer{margin:0 0 0 auto;height:100vh;max-height:none;border-radius:24px 
 .dh h3{font-size:20px}
 .x{border:0;background:var(--paper);width:38px;height:38px;border-radius:50%;font-size:16px}
 .db{padding:22px}
-.gal{aspect-ratio:4/3;background:#111;border-radius:16px;overflow:hidden;display:grid;place-items:center}
+.gal{height:clamp(220px,58vh,520px);background:#111;border-radius:16px;overflow:hidden;display:grid;place-items:center}
+#dItem{max-width:min(980px,calc(100% - 24px))}
+.item{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:26px}
+.item .thumbs{margin:10px 0 0}
+.info{display:flex;flex-direction:column;gap:8px;min-width:0}
+.info .row{margin-top:auto;flex-wrap:wrap}
+@media(max-width:760px){.item{grid-template-columns:1fr;gap:16px}.gal{height:clamp(200px,38vh,340px)}}
 .gal img,.gal video{width:100%;height:100%;object-fit:contain}
 .thumbs{display:flex;gap:8px;margin:10px 0 16px;overflow-x:auto}
 .thumbs button{flex:none;width:60px;height:60px;border-radius:10px;border:2px solid transparent;padding:0;overflow:hidden;background:#222;color:#fff}
@@ -273,7 +279,7 @@ footer button{background:none;border:0;color:#8fa59a;text-decoration:underline}
 
 <script>
 /* ============ SETUP: paste your Supabase values here (see setup steps) ============ */
-const CFG={SUPABASE_URL:'https://tlebvwdenodxiigdvshm.supabase.co',SUPABASE_ANON_KEY:'sb_publishable_w-odLqQu9pbhv_NBS7HpcA_vHY0-XVY'};
+const CFG={SUPABASE_URL:'',SUPABASE_ANON_KEY:''};
 /* ================================================================================== */
 const LIVE=!!(CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY),BUCKET='product-media';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -291,7 +297,7 @@ try{cart=JSON.parse(ls('cart')||'[]')}catch(e){}
 
 /* ---------- data layer: Supabase REST, or browser-only demo mode ---------- */
 async function api(path,o={}){
-  const r=await fetch(CFG.SUPABASE_URL+path,{...o,headers:{apikey:CFG.SUPABASE_ANON_KEY,Authorization:'Bearer '+(o.auth&&token?token:CFG.SUPABASE_ANON_KEY),'Content-Type':'application/json',...o.headers}});
+  const r=await fetch(CFG.SUPABASE_URL+path,{...o,headers:{apikey:CFG.SUPABASE_ANON_KEY,...(o.auth&&token?{Authorization:'Bearer '+token}:CFG.SUPABASE_ANON_KEY.startsWith('sb_')?{}:{Authorization:'Bearer '+CFG.SUPABASE_ANON_KEY}),'Content-Type':'application/json',...o.headers}});
   if(!r.ok){const e=await r.json().catch(()=>({}));if(o.auth&&(r.status===401||e.code==='PGRST301')){token='';ls('tok','');throw new Error('Your session expired. Please sign in again.')}throw new Error(e.message||e.msg||e.error_description||r.statusText)}
   return r.status===204?null:r.json().catch(()=>null);
 }
@@ -370,11 +376,11 @@ function item(id){return products.find(p=>String(p.id)===String(id))}
 function showItem(id){const p=item(id);if(!p)return;
   const im=p.images?.length?p.images:[PH];
   $('#iTitle').textContent=p.name;
-  $('#iBody').innerHTML=`<div class="gal" id="gal"><img src="${esc(im[0])}" alt="${esc(p.name)}"></div>
-  <div class="thumbs">${im.map(s=>`<button data-img="${esc(s)}" aria-label="Show photo"><img src="${esc(s)}" alt=""></button>`).join('')}${p.video?`<button data-vid="${esc(p.video)}" aria-label="Play video"><i class="fas fa-play"></i></button>`:''}</div>
-  <p class="cat">${esc(p.category)} · ${esc(p.material)}</p>
-  ${p.description?`<p style="margin:8px 0 0">${esc(p.description)}</p>`:''}
-  <div class="row" style="margin-top:18px"><span class="price">${inr(p.price)}</span><span style="display:flex;gap:8px"><button class="btn ghost sm" data-ask="${p.id}"><i class="fab fa-whatsapp"></i>Ask</button><button class="btn" data-add="${p.id}"><i class="fas fa-cart-plus"></i>Add to cart</button></span></div>`;
+  $('#iBody').innerHTML=`<div class="item"><div><div class="gal" id="gal"><img src="${esc(im[0])}" alt="${esc(p.name)}"></div>
+  <div class="thumbs">${im.map(s=>`<button data-img="${esc(s)}" aria-label="Show photo"><img src="${esc(s)}" alt=""></button>`).join('')}${p.video?`<button data-vid="${esc(p.video)}" aria-label="Play video"><i class="fas fa-play"></i></button>`:''}</div></div>
+  <div class="info"><p class="cat">${esc(p.category)} · ${esc(p.material)}</p>
+  ${p.description?`<p>${esc(p.description)}</p>`:''}
+  <div class="row" style="padding-top:18px"><span class="price">${inr(p.price)}</span><span style="display:flex;gap:8px"><button class="btn ghost sm" data-ask="${p.id}"><i class="fab fa-whatsapp"></i>Ask</button><button class="btn" data-add="${p.id}"><i class="fas fa-cart-plus"></i>Add to cart</button></span></div></div></div>`;
   openD('#dItem')}
 $('#iBody').addEventListener('click',e=>{const i=e.target.closest('[data-img]'),v=e.target.closest('[data-vid]');
   if(i)$('#gal').innerHTML=`<img src="${i.dataset.img}" alt="">`;
